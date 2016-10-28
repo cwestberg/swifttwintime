@@ -9,6 +9,7 @@
 import Foundation
 
 class RallyTime {
+
     var tod = NSDate()
 //    var timer = Timer()
     var timerCounter = 0
@@ -53,9 +54,17 @@ class RallyTime {
         default:
             break
         }
+        print("second \(second)")
+        
         switch timerStatus {
         case "started":
             self.updateTimer()
+        case "waiting":
+            timerLabel = "waiting"
+            if second == 0 {
+                timerStatus = "started"
+                timerCounter = 0
+            }
 //        case "stopped":
 //            print("stopped")
         default:
@@ -63,11 +72,13 @@ class RallyTime {
 //            print("WTF timer")
         }
     }
+    func wait()  {
+        timerStatus = "waiting"
+    }
     
     func updateTimer() {
         timerCounter += 1
         let ti = timerCounter
-        print("timer \(ti)")
         if timeUnit == "seconds" {
             let seconds = String(format: "%0.2d",ti % 60)
             let m = (ti / 60) % 60

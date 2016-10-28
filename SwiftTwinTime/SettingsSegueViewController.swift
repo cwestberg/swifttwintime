@@ -32,6 +32,26 @@ class SettingsSegueViewController: UIViewController {
         default:
             break;
         }
+        switch controlFunction {
+        case "basic":
+            controlFunctionSegmentedControl.selectedSegmentIndex=0
+        case "regularity":
+            controlFunctionSegmentedControl.selectedSegmentIndex = 1
+        case "jogularity":
+            controlFunctionSegmentedControl.selectedSegmentIndex=2
+        case "jogularityTOD":
+            controlFunctionSegmentedControl.selectedSegmentIndex=3
+        default:
+            break
+        }
+        switch distUnit {
+        case "miles":
+            distUnitSegmentedControl.selectedSegmentIndex=0
+        case "km":
+            distUnitSegmentedControl.selectedSegmentIndex=1
+        default:
+            break
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -78,9 +98,13 @@ class SettingsSegueViewController: UIViewController {
         switch sender.selectedSegmentIndex
         {
         case 0:
-            controlFunction = "regularity"
+            controlFunction = "basic"
         case 1:
+            controlFunction = "regularity"
+        case 2:
             controlFunction = "jogularity"
+        case 3:
+            controlFunction = "jogularityTOD"
         default:
             break;
         }

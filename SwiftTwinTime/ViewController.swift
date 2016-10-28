@@ -8,22 +8,32 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSource {
     
     // Outlets
+    @IBOutlet weak var milesLbl: UILabel!
+    @IBOutlet weak var imLbl: UILabel!
     @IBOutlet weak var todLabel: UILabel!
     @IBOutlet weak var timerLabel: UILabel!
     @IBOutlet weak var stepperControl: UIStepper!
     @IBOutlet weak var stepperFunctionSegmentedControl: UISegmentedControl!
     @IBOutlet weak var unitsSegmentedControl: UISegmentedControl!
+    @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var factorLabel: UILabel!
+    @IBOutlet weak var modeLbl: UILabel!
     
     // Variables
+    var distance = 0.0
+    var factor = 1.0
     var tod = NSDate()
     var timer = Timer()
     var timerCounter = 0
-    var items: [String] = []
     var timeUnit = "seconds"
     var distUnit = "miles"
+    var oldStepper = 0.0
+    var items: [String] = []
+    var actions: [String] = []
+    var controlFunction = "basic"
     var timeAdjustStepperValue = 0.0
     var factorStepperValue = 0.0
     var currentStepperValue = 0.0
@@ -35,10 +45,14 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setupTimersForUnit()
+        modeLbl.text = controlFunction
 
 //        // Do any additional setup after loading the view, typically from a nib.
 //       
+        NotificationCenter.default.addObserver(self, selector: #selector(ViewController.locationAvailable(_:)), name: NSNotification.Name(rawValue: "LOCATION_AVAILABLE"), object: nil)
         
+        self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+
     }
 
     override func didReceiveMemoryWarning() {
@@ -47,23 +61,162 @@ class ViewController: UIViewController {
     }
     
     @IBAction func stepperAction(_ sender: UIStepper) {
+        switch stepperFunctionSegmentedControl.selectedSegmentIndex {
+        case 0: // Distance
+            omStepper(sender)
+        case 1: // factor
+            factorStepper(sender)
+        case 2: // Time
+            break
+        default: break
+        }
     }
     
     @IBAction func stepperFuctionSegmentedControl(_ sender: UISegmentedControl) {
+        switch stepperFunctionSegmentedControl.selectedSegmentIndex {
+        case 0: // Distance
+            stepperControl.stepValue = 0.01
+            stepperControl.value = distance
+        case 1: // factor
+            stepperControl.stepValue = 0.0005
+            stepperControl.value = factor
+        case 2: // Time
+            break
+        default: break
+        }
+
     }
     
-    @IBAction func secondsOrCents(_ sender: UISegmentedControl) {
-        switch sender.selectedSegmentIndex {
+    @IBAction func controlBtn(_ sender: Any) {
+        switch controlFunction {
+        case "regularity":
+            // Zero IM and Timer
+            items.insert("\(imLbl.text!) \(rallyTime.timerLabel)", at:0)
+            self.tableView.reloadData()
+            zeroIM(sender as AnyObject)
+            startTimerBtn(sender as AnyObject)
+        case "jogularity":
+            // Split IM & Timer
+            items.insert("\(imLbl.text!) \(rallyTime.timerLabel)", at:0)
+            self.tableView.reloadData()
+        case "jogularityTOD":
+            // Split IM & Timer
+            items.insert("\(imLbl.text!) \(rallyTime.todLabel)", at:0)
+            self.tableView.reloadData()
+        case "basic":
+            items.insert("\(milesLbl.text!) \(rallyTime.todLabel)", at:0)
+            self.tableView.reloadData()
+        default:
+            break
+        }
+    }
+//    @IBAction func secondsOrCents(_ sender: UISegmentedControl) {
+//        switch sender.selectedSegmentIndex {
+//        case 0:
+//            timeUnit = "seconds"
+//        case 1:
+//            timeUnit = "cents"
+//        default:
+//            break;
+//        }
+//        rallyTime.timeUnit = timeUnit
+////        splitBtn(sender: self)
+//    }
+    
+    @IBAction func selectedCountersChanged(_ sender: AnyObject) {
+        //        SelectedCountersChanged
+        var counters = ""
+        switch sender.selectedSegmentIndex
+        {
         case 0:
-            timeUnit = "seconds"
+            counters = "om"
         case 1:
-            timeUnit = "cents"
+            counters = "both"
+        case 2:
+            counters = "im"
         default:
             break;
         }
-        rallyTime.timeUnit = timeUnit
-//        splitBtn(sender: self)
+        let userInfo = [
+            "action":"\(counters)"]
+        
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "SelectedCountersChanged"), object: nil, userInfo: userInfo)
     }
+    @IBAction func direction(_ sender: AnyObject) {
+        var direction = ""
+        switch sender.selectedSegmentIndex
+        {
+        case 0:
+            print("direction Btn pushed forward")
+            direction = "forward"
+        case 1:
+            print("direction Btn pushed reverse")
+            direction = "reverse"
+        default:
+            break;
+        }
+        let userInfo = [
+            "action":"\(direction)"]
+        
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "DirectionChanged"), object: nil, userInfo: userInfo)
+        
+    }
+    func omStepper(_ sender: UIStepper) {
+        
+        if sender.value < oldStepper{
+            let userInfo = [
+                "action":"minusOne"]
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "MinusOne"), object: nil, userInfo: userInfo)
+            
+        }
+        else{
+            let userInfo = [
+                "action":"plusOne"]
+            NotificationCenter.default.post(name: Notification.Name(rawValue: "PlusOne"), object: nil, userInfo: userInfo)
+        }
+        oldStepper = sender.value
+        
+    }
+    func factorStepper(_ sender: UIStepper) {
+        self.factor = sender.value
+        self.factorLabel.text = String(format: "%.4f",self.factor)
+        let userInfo = [
+            "factor":factor]
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "FACTOR_CHANGED"), object: nil, userInfo: userInfo)
+        self.items.insert(String(format: "%.4f", factor), at:0)
+        self.actions.insert("Step Factor", at:0)
+        self.tableView.reloadData()
+    }
+
+    
+    
+    @IBAction func zeroOdo(_ sender: AnyObject) {
+        //print("reset Btn pushed")
+        let userInfo = [
+            "action":"reset"]
+        let zom = self.milesLbl.text!
+        items.insert("Zero OM @\(zom)", at:0)
+        actions.insert("Zero OM", at:0)
+        self.tableView.reloadData()
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "Reset"), object: nil, userInfo: userInfo)
+    }
+    
+    @IBAction func zeroIM(_ sender: AnyObject) {
+        //print("zeroIM Btn pushed")
+        if controlFunction == "jogularity" {
+            rallyTime.wait()
+        }
+        let userInfo = [
+            "action":"resetIM"]
+        //        let zim = String(format: "%.2f", self.splitOM)
+//        let zim = self.imLbl.text!
+//        items.insert("Zero IM @\(zim)", at:0)
+//        actions.insert("Zero IM", at:0)
+//        self.tableView.reloadData()
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "ResetIM"), object: nil, userInfo: userInfo)
+    }
+    
+    
     // Moves all time functionality to RallyTime
     func updateTime() {
         rallyTime.updateTime()
@@ -89,27 +242,65 @@ class ViewController: UIViewController {
        
     }
     
+    func locationAvailable(_ notification:Notification) -> Void {
+        let userInfo = (notification as NSNotification).userInfo
+        //        print("Odometer UserInfo: \(userInfo)")
+        //        print(userInfo!["miles"]!)
+        //        let m = userInfo!["miles"]!
+        //        self.splitOM = m as! Double
+        //        self.milesLbl.text = (String(format: "%.2f", m as! Float64))
+        //        let im = userInfo!["imMiles"]!
+        //        self.splitIM = im as! Double
+        //        self.imLbl.text = (String(format: "%.2f", im as! Float64))
+        
+        switch distUnit
+        {
+        case "miles":
+            let m = userInfo!["miles"]!
+            self.distance = m as! Float64
+            self.milesLbl.text = (String(format: "%06.2f", m as! Float64))
+            let im = userInfo!["imMiles"]!
+            self.imLbl.text = (String(format: "%06.2f", im as! Float64))
+        case "km":
+            let d = userInfo!["km"]!
+            self.distance = d as! Float64
+            self.milesLbl.text = (String(format: "%06.2f", d as! Float64))
+            let imD = userInfo!["imKM"]!
+            self.imLbl.text = (String(format: "%06.2f", imD as! Float64))
+        default:
+            break;
+        }
+        //        if (delegate?.xgps160!.isConnected)! == false {
+        //            horrizontalAccuracy.text = String(describing: userInfo!["horizontalAccuracy"]!)
+        //        }
+        
+    }
+
+    
     // Segue
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        print("prepare segue \(segue.identifier)")
+//        print("prepare segue \(segue.identifier)")
         if let settingsVC = segue.destination as? SettingsSegueViewController{
             settingsVC.timeUnit = self.timeUnit
+            settingsVC.controlFunction = self.controlFunction
         }
 
     }
     
     @IBAction func unwindToViewController(sender: UIStoryboardSegue) {
         let model = sender.source as! SettingsSegueViewController
-        print("segue unwind \(model.timeUnit) ")
+//        print("segue unwind \(model.timeUnit) ")
         timeUnit = model.timeUnit
         rallyTime.timeUnit = timeUnit
         rallyTime = RallyTime(timeUnitString: timeUnit)
+        controlFunction = model.controlFunction
+        modeLbl.text = controlFunction
 
         self.setupTimersForUnit()
 
 
-        print("segue unwind \(model.distUnit) ")
-        print("segue unwind \(model.controlFunction) ")
+//        print("segue unwind \(model.distUnit) ")
+//        print("segue unwind \(model.controlFunction) ")
 
     }
 //    @IBAction func saveToViewController(sender: UIStoryboardSegue) {
@@ -137,13 +328,40 @@ class ViewController: UIViewController {
                                  selector: #selector(ViewController.updateTime), userInfo: nil, repeats: true)
     }
     
+    // Table
     
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return self.items.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = self.tableView.dequeueReusableCell(withIdentifier: "cell")! as UITableViewCell
+        //        print(indexPath.row)
+        //        print(self.actions.count)
+        //        print(self.actions)
+        cell.textLabel?.text = self.items[(indexPath as NSIndexPath).row]
+//        cell.detailTextLabel!.text = self.actions[(indexPath as NSIndexPath).row]
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+//        print("You selected cell #\((indexPath as NSIndexPath).row)!")
+        
+    }
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == UITableViewCellEditingStyle.delete {
+            items.remove(at: (indexPath as NSIndexPath).row)
+            tableView.deleteRows(at: [indexPath], with: UITableViewRowAnimation.automatic)
+        }
+    }
+    // End Table
+
     
     // Deprecate
     func updateTimerLabel() {
         timerCounter += 1
         let ti = timerCounter
-        print("timer \(ti)")
+//        print("timer \(ti)")
         if timeUnit == "seconds" {
             let seconds = String(format: "%0.2d",ti % 60)
             let m = (ti / 60) % 60

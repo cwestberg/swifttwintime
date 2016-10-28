@@ -56,6 +56,8 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         switch status {
         case .notDetermined:
             print(".NotDetermined")
+            self.locationManager.requestAlwaysAuthorization()
+
             break
             
         case .authorizedAlways:
