@@ -89,9 +89,7 @@ class RallyTime {
         // condider CACurrentMediaTime
         timerCounter += 1
         let et = NSDate().timeIntervalSince(timerStartDate as Date)
-//        print(Int(et))
-//        print(Int(et * 1.6667))
-//        let ti = timerCounter
+
         if timeUnit == "seconds" {
 //            let seconds = String(format: "%02d",(ti % 6000) / 100)
             let seconds = String(format: "%02d",(Int(et))%60)
