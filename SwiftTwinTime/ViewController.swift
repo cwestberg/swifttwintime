@@ -21,6 +21,7 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var factorLabel: UILabel!
     @IBOutlet weak var modeLbl: UILabel!
+    @IBOutlet weak var timeAdjustLbl: UILabel!
     
     // Variables
     var distance = 0.0
@@ -67,9 +68,14 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         case 1: // factor
             factorStepper(sender)
         case 2: // Time
-            break
+            timeStepper(sender)
         default: break
         }
+    }
+    func timeStepper(_ sender: UIStepper) {
+        timeAdjustStepperValue = sender.value
+        timeAdjustLbl.text = String(format: "%.4f",self.timeAdjustStepperValue)
+        rallyTime.secondsToAdd = timeAdjustStepperValue
     }
     
     @IBAction func stepperFuctionSegmentedControl(_ sender: UISegmentedControl) {
@@ -81,7 +87,11 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
             stepperControl.stepValue = 0.0005
             stepperControl.value = factor
         case 2: // Time
-            break
+            stepperControl.maximumValue = 5.0
+            stepperControl.minimumValue = -5.0
+            stepperControl.stepValue = 0.01
+            stepperControl.value = timeAdjustStepperValue
+            print("\(stepperControl.value) \(timeAdjustStepperValue)")
         default: break
         }
 
@@ -89,6 +99,9 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
     
     @IBAction func controlBtn(_ sender: Any) {
         switch controlFunction {
+        case "basic":
+            items.insert("\(milesLbl.text!) \(rallyTime.todLabel)", at:0)
+            self.tableView.reloadData()
         case "regularity":
             // Zero IM and Timer
             items.insert("\(imLbl.text!) \(rallyTime.timerLabel)", at:0)
@@ -103,9 +116,18 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
             // Split IM & Timer
             items.insert("\(imLbl.text!) \(rallyTime.todLabel)", at:0)
             self.tableView.reloadData()
-        case "basic":
-            items.insert("\(milesLbl.text!) \(rallyTime.todLabel)", at:0)
+        case "jogularityN":
+            // Split IM & Timer
+            items.insert("\(imLbl.text!) \(rallyTime.timerLabel)", at:0)
             self.tableView.reloadData()
+        case "regularityN":
+            // Zero IM and Timer
+            if rallyTime.timerStatus == "started" {
+                items.insert("\(imLbl.text!) \(rallyTime.timerLabel)", at:0)
+                self.tableView.reloadData()
+                zeroIM(sender as AnyObject)
+                startTimerBtn(sender as AnyObject)
+            }
         default:
             break
         }
@@ -187,6 +209,8 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         self.actions.insert("Step Factor", at:0)
         self.tableView.reloadData()
     }
+    
+
 
     
     
@@ -203,9 +227,20 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
     
     @IBAction func zeroIM(_ sender: AnyObject) {
         //print("zeroIM Btn pushed")
-        if controlFunction == "jogularity" {
+        
+        switch controlFunction {
+        case "regularity":
+            startTimerBtn(sender as AnyObject)
+        case "regularityN":
             rallyTime.wait()
+        case "jogularityN":
+            rallyTime.wait()
+        case "jogularity" :
+            startTimerBtn(sender as AnyObject)
+        default:
+            break
         }
+        
         let userInfo = [
             "action":"resetIM"]
         //        let zim = String(format: "%.2f", self.splitOM)
@@ -283,20 +318,26 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         if let settingsVC = segue.destination as? SettingsSegueViewController{
             settingsVC.timeUnit = self.timeUnit
             settingsVC.controlFunction = self.controlFunction
+            settingsVC.distUnit = self.distUnit
         }
 
     }
     
     @IBAction func unwindToViewController(sender: UIStoryboardSegue) {
         let model = sender.source as! SettingsSegueViewController
-//        print("segue unwind \(model.timeUnit) ")
-        timeUnit = model.timeUnit
-        rallyTime.timeUnit = timeUnit
-        rallyTime = RallyTime(timeUnitString: timeUnit)
+//        print("segue unwind \(model.timeUnit) \(timeUnit) ")
+        if timeUnit != model.timeUnit {
+            timeUnit = model.timeUnit
+            rallyTime.timeUnit = timeUnit
+            rallyTime = RallyTime(timeUnitString: timeUnit)
+            self.setupTimersForUnit()
+
+        }
+
         controlFunction = model.controlFunction
         modeLbl.text = controlFunction
+        distUnit = model.distUnit
 
-        self.setupTimersForUnit()
 
 
 //        print("segue unwind \(model.distUnit) ")
@@ -316,6 +357,7 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
 //        print("unwind")
 //    }
     
+    // start time
     func setupTimersForUnit() {
         timer.invalidate()
         var timeInterval = 0.6
@@ -323,7 +365,7 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
             timeInterval = 1.0
         }
         // Do any additional setup after loading the view, typically from a nib.
-        
+        timeInterval = 0.01
         timer = Timer.scheduledTimer(timeInterval: timeInterval, target: self,
                                  selector: #selector(ViewController.updateTime), userInfo: nil, repeats: true)
     }
@@ -357,57 +399,57 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
     // End Table
 
     
-    // Deprecate
-    func updateTimerLabel() {
-        timerCounter += 1
-        let ti = timerCounter
-//        print("timer \(ti)")
-        if timeUnit == "seconds" {
-            let seconds = String(format: "%0.2d",ti % 60)
-            let m = (ti / 60) % 60
-            let minutes = String(format: "%0.2d",m)
-            //        let hours = (ti / 3600)
-            timerLabel.text = "\(minutes):\(seconds)"
-        }
-        else {
-            let cents = String(format: "%0.2d",ti % 100)
-            let m = (ti / 60) % 100
-            let minutes = String(format: "%0.2d",m)
-            //        let hours = (ti / 3600)
-            timerLabel.text = "\(minutes).\(cents)"
-        }
-
-    }
-    
-    func updateTimeLabel() {
-        tod = NSDate()
-//        let secondsToAdd = (timeAdjustStepper.value * 0.1)
-//        tod = tod.addingTimeInterval(Double(secondsToAdd))
-        
-        let currentDate = NSDate()
-        let calendar = Calendar.current
-        
-        let dateComponents = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: currentDate as Date)
-        
-        let millisecond = Int(Double(dateComponents.nanosecond!)/1000000)
-        let mytime = dateComponents.second! * 1000 + millisecond
-        let cents = trunc((Double(mytime) * 1.66667)/1000)
-        
-        let unit = Double(dateComponents.second!)
-        let second = Int(unit)
-        let secondString = String(format: "%02d", second)
-        
-        let centString = String(format: "%02d", Int(cents))
-        let minuteString = String(format: "%02d", dateComponents.minute!)
-        switch timeUnit {
-        case "seconds":
-            todLabel.text = "\(dateComponents.hour!):\(minuteString):\(secondString)"
-        case "cents":
-            todLabel.text = "\(dateComponents.hour!):\(minuteString).\(centString)"
-        default:
-            break
-        }
-    }
+    // Deprecate =========================================================
+//    func updateTimerLabel() {
+//        timerCounter += 1
+//        let ti = timerCounter
+////        print("timer \(ti)")
+//        if timeUnit == "seconds" {
+//            let seconds = String(format: "%0.2d",ti % 60)
+//            let m = (ti / 60) % 60
+//            let minutes = String(format: "%0.2d",m)
+//            //        let hours = (ti / 3600)
+//            timerLabel.text = "\(minutes):\(seconds)"
+//        }
+//        else {
+//            let cents = String(format: "%0.2d",ti % 100)
+//            let m = (ti / 60) % 100
+//            let minutes = String(format: "%0.2d",m)
+//            //        let hours = (ti / 3600)
+//            timerLabel.text = "\(minutes).\(cents)"
+//        }
+//
+//    }
+//    
+//    func updateTimeLabel() {
+//        tod = NSDate()
+////        let secondsToAdd = (timeAdjustStepper.value * 0.1)
+////        tod = tod.addingTimeInterval(Double(secondsToAdd))
+//        
+//        let currentDate = NSDate()
+//        let calendar = Calendar.current
+//        
+//        let dateComponents = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: currentDate as Date)
+//        
+//        let millisecond = Int(Double(dateComponents.nanosecond!)/1000000)
+//        let mytime = dateComponents.second! * 1000 + millisecond
+//        let cents = trunc((Double(mytime) * 1.66667)/1000)
+//        
+//        let unit = Double(dateComponents.second!)
+//        let second = Int(unit)
+//        let secondString = String(format: "%02d", second)
+//        
+//        let centString = String(format: "%02d", Int(cents))
+//        let minuteString = String(format: "%02d", dateComponents.minute!)
+//        switch timeUnit {
+//        case "seconds":
+//            todLabel.text = "\(dateComponents.hour!):\(minuteString):\(secondString)"
+//        case "cents":
+//            todLabel.text = "\(dateComponents.hour!):\(minuteString).\(centString)"
+//        default:
+//            break
+//        }
+//    }
 
 }
 

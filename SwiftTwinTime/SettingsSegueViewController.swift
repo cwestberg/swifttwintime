@@ -10,13 +10,14 @@ import UIKit
 
 class SettingsSegueViewController: UIViewController {
     var distUnit = "miles"
-    var timeUnit = "cents"
+    var timeUnit = "seconds"
     var controlFunction = "regularity"
     
     
     @IBOutlet weak var timeUnitSegmentedControl: UISegmentedControl!
     @IBOutlet weak var distUnitSegmentedControl: UISegmentedControl!
     @IBOutlet weak var controlFunctionSegmentedControl: UISegmentedControl!
+    @IBOutlet weak var helpTextView: UITextView!
 
     
     override func viewDidLoad() {
@@ -35,12 +36,22 @@ class SettingsSegueViewController: UIViewController {
         switch controlFunction {
         case "basic":
             controlFunctionSegmentedControl.selectedSegmentIndex=0
+            basicText()
         case "regularity":
             controlFunctionSegmentedControl.selectedSegmentIndex = 1
+            regularityText()
         case "jogularity":
+            jogularityText()
             controlFunctionSegmentedControl.selectedSegmentIndex=2
         case "jogularityTOD":
             controlFunctionSegmentedControl.selectedSegmentIndex=3
+            jogularityTODText()
+        case "jogularityN":
+            controlFunctionSegmentedControl.selectedSegmentIndex=4
+            jogularityNText()
+        case "regularityN":
+            controlFunctionSegmentedControl.selectedSegmentIndex=5
+            regularityNText()
         default:
             break
         }
@@ -77,9 +88,9 @@ class SettingsSegueViewController: UIViewController {
         case 1:
             timeUnit = "cents"
         default:
+            print("timeUnit error")
             break;
         }
-
     }
     
     @IBAction func distUnitChanged(_ sender: UISegmentedControl) {
@@ -99,15 +110,43 @@ class SettingsSegueViewController: UIViewController {
         {
         case 0:
             controlFunction = "basic"
+            basicText()
         case 1:
             controlFunction = "regularity"
+            regularityText()
         case 2:
             controlFunction = "jogularity"
+            jogularityText()
         case 3:
             controlFunction = "jogularityTOD"
+            jogularityTODText()
+        case 4:
+            controlFunction = "jogularityN"
+            jogularityNText()
+        case 5:
+            controlFunction = "regularityN"
+            regularityNText()
         default:
             break;
         }
+    }
+    func basicText() {
+        helpTextView.text = "Basic"
+    }
+    func regularityText() {
+        helpTextView.text = "Zero IM zeros OM, \nZeros Timer and \nStarts timer\nControl button records IM and Timer\nZeros IM and\nZeros Timer"
+    }
+    func regularityNText() {
+        helpTextView.text = "Zero IM zeros OM, \nZeros Timer and \nStarts timer at the next minute\nControl button records IM and Timer\nZeros IM and\nZeros Timer"
+    }
+    func jogularityNText() {
+        helpTextView.text = "Zero IM zeros OM, \nZeros Timer and \nStarts timer at the next minute\nControl button records IM and Timer\nTimer and IM are left alone"
+    }
+    func jogularityText() {
+        helpTextView.text = "Zero IM zeros OM, \nZeros Timer and \nStarts timer\nControl button records IM and Timer\nTimer and IM are left alone"
+    }
+    func jogularityTODText() {
+        helpTextView.text = "Zero IM zeros OM, \nTimer is left alone\nControl button records IM and TOD\nTimer and IM are left alone"
     }
 
 }

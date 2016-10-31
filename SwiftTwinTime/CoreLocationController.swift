@@ -33,6 +33,8 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         self.locationManager.delegate = self
         self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
         self.locationManager.requestAlwaysAuthorization()
+        self.locationManager.allowsBackgroundLocationUpdates = true
+
         NotificationCenter.default.addObserver(self, selector: #selector(CoreLocationController.reset(_:)), name: NSNotification.Name(rawValue: "Reset"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(CoreLocationController.resetIM(_:)), name: NSNotification.Name(rawValue: "ResetIM") , object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(CoreLocationController.resetBoth(_:)), name: NSNotification.Name(rawValue: "ResetBoth") , object: nil)

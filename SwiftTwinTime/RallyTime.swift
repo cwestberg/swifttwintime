@@ -19,6 +19,9 @@ class RallyTime {
     var timerLabel = "00 00"
     var todLabel = ""
     var timerStatus = "stopped"
+    var secondsToAdd = 0.0
+    var timerStartDate = NSDate()
+    
     
     init(timeUnitString: String) {
         timeUnit = timeUnitString
@@ -28,10 +31,11 @@ class RallyTime {
     
     func updateTime() {
         tod = NSDate()
-        //        let secondsToAdd = (timeAdjustStepper.value * 0.1)
-        //        tod = tod.addingTimeInterval(Double(secondsToAdd))
-        
-        let currentDate = NSDate()
+//        let secondsToAdd = (timeAdjustStepper.value * 0.1)
+        tod = tod.addingTimeInterval(Double(secondsToAdd))
+//        print(secondsToAdd)
+        let currentDate = tod
+//        let currentDate = NSDate()
         let calendar = Calendar.current
         
         let dateComponents = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: currentDate as Date)
@@ -54,16 +58,21 @@ class RallyTime {
         default:
             break
         }
-        print("second \(second)")
+//        print("second \(second)")
         
         switch timerStatus {
         case "started":
+//            timerCounter += 1
+
+//            print(second)
             self.updateTimer()
         case "waiting":
-            timerLabel = "waiting"
+            timerLabel = "Next"
             if second == 0 {
                 timerStatus = "started"
                 timerCounter = 0
+                timerStartDate = NSDate()
+
             }
 //        case "stopped":
 //            print("stopped")
@@ -77,18 +86,27 @@ class RallyTime {
     }
     
     func updateTimer() {
+        // condider CACurrentMediaTime
         timerCounter += 1
-        let ti = timerCounter
+        let et = NSDate().timeIntervalSince(timerStartDate as Date)
+//        print(Int(et))
+//        print(Int(et * 1.6667))
+//        let ti = timerCounter
         if timeUnit == "seconds" {
-            let seconds = String(format: "%0.2d",ti % 60)
-            let m = (ti / 60) % 60
+//            let seconds = String(format: "%02d",(ti % 6000) / 100)
+            let seconds = String(format: "%02d",(Int(et))%60)
+//            let seconds = String(format: "%02d",(ti/100)%60)
+            let m = Int((et/60))%60
             let minutes = String(format: "%0.2d",m)
             //        let hours = (ti / 3600)
             timerLabel = "\(minutes):\(seconds)"
         }
         else {
-            let cents = String(format: "%0.2d",ti % 100)
-            let m = (ti / 60) % 100
+//            let cnts = ((ti/60)%100)
+//            let cents = String(format: "%02d",((ti/60)%100))
+            let cents = String(format: "%02d",(Int(et * 1.6667)%100))
+//            let m = (ti / 600) % 100
+            let m = Int(et)/60
             let minutes = String(format: "%0.2d",m)
             //        let hours = (ti / 3600)
             timerLabel = "\(minutes).\(cents)"
@@ -97,6 +115,7 @@ class RallyTime {
     
     func startTimer() {
         timerCounter = 0
+        timerStartDate = NSDate()
 //        timer.invalidate()
         timerLabel = "00 00"
         timerStatus = "started"
