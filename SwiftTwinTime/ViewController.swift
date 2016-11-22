@@ -314,7 +314,6 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
     
     // Segue
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-//        print("prepare segue \(segue.identifier)")
         if let settingsVC = segue.destination as? SettingsSegueViewController{
             settingsVC.timeUnit = self.timeUnit
             settingsVC.controlFunction = self.controlFunction
