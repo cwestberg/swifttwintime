@@ -26,6 +26,11 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
     //    var xgpsConnected = false
     
     var startTime = Date()
+    // Estimated distance to make odo look pretty
+    var lastKPH = 0.0
+    var estimatedDistance = 0.0
+    var timer = Timer()
+    
     override init() {
         self.miles = 0.0
         self.factor = 1.0
@@ -81,6 +86,104 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
     }
     
     
+    func calcEstimatedDistance() {
+        // D + S (m/s to K/h)* T
+        estimatedDistance += (lastKPH * 3.6) * 0.02778
+//        estimatedDistance += (lastKPH * 3.6) * 0.0833
+//        print("calcEstimatedDistance \(estimatedDistance)")
+
+//        print("estimatedDistance: \(estimatedDistance) \(self.meters)")
+//        print("meters + estimatedDistance: \(estimatedDistance + self.meters)")
+//        timer.invalidate()
+        // add estimated distance to current distanc
+        
+//        let distance = estimatedDistance
+        let updateChoices = (self.direction, self.selectedCounters)
+        var kmEstimated = estimatedDistance
+//        var milesEstimated = 0.0
+//        var imEstimated = 0.0
+//        var imkmEstimated = 0.0
+        var imkmEstimated = estimatedDistance
+        var infoKm = (self.meters/1000) * self.factor
+        var infoImKm = (self.meters/1000) * self.factor
+        var infoMiles = (self.meters  * 0.000621371) * self.factor
+        var imDdistanceInMiles:Float64 = ((imkmEstimated * 0.000621371) * self.factor)
+        var infoIm = self.imMiles
+        
+        switch updateChoices
+        {
+        case ("forward","both"):
+            kmEstimated = self.meters + estimatedDistance // Actually meters
+            imkmEstimated = self.imMeters + estimatedDistance // Actually meters
+            infoImKm = imkmEstimated
+            infoMiles = (kmEstimated * 0.000621371)
+            imDdistanceInMiles = (((imkmEstimated + (self.imMiles * self.factor)) * 0.000621371) )
+            infoIm = imDdistanceInMiles
+            infoKm = kmEstimated
+        case ("forward","om"):
+            kmEstimated = self.meters + estimatedDistance // Actually meters
+            infoMiles = (kmEstimated * 0.000621371)
+        case ("forward","im"):
+            imkmEstimated = self.imMeters + estimatedDistance // Actually meters
+            imDdistanceInMiles = (((imkmEstimated + (self.imMiles * self.factor)) * 0.000621371) )
+            infoIm = imDdistanceInMiles
+        case ("reverse","both"):
+//            kmEstimated = self.meters - estimatedDistance // Actually meters
+//            imkmEstimated = self.imMeters - estimatedDistance // Actually meters
+            kmEstimated = self.meters - estimatedDistance // Actually meters
+            imkmEstimated = self.imMeters - estimatedDistance // Actually meters
+            infoImKm = imkmEstimated
+            infoMiles = (kmEstimated * 0.000621371)
+            imDdistanceInMiles = (((imkmEstimated + (self.imMiles * self.factor)) * 0.000621371))
+            infoIm = imDdistanceInMiles
+            infoKm = kmEstimated
+
+        case ("reverse","om"):
+//            kmEstimated = self.meters - estimatedDistance // Actually meters
+            kmEstimated = self.meters - estimatedDistance // Actually meters
+            infoMiles = (kmEstimated * 0.000621371)
+        case ("reverse","im"):
+//            imkmEstimated = self.imMeters - estimatedDistance // Actually meters
+            imkmEstimated = self.imMeters + estimatedDistance // Actually meters
+            imDdistanceInMiles = (((imkmEstimated - self.imMiles) * 0.000621371) * self.factor)
+            infoIm = imDdistanceInMiles
+        default:
+            break;
+        }
+//        print("math \(self.meters) + \(estimatedDistance) = \(kmEstimated) miles \(kmEstimated * 0.000621371)")
+
+        if kmEstimated < 0.0 {
+            kmEstimated = 0.0
+        }
+        if imkmEstimated < 0.0 {
+            imkmEstimated = 0.0
+        }
+//        let infokm = (self.meters/1000) * self.factor
+//        let infoMiles = (kmEstimated * 0.000621371)
+//        let infoMiles = (self.meters/1000  * 0.000621371) * self.factor
+//        let imDdistanceInMiles:Float64 = ((imkmEstimated * 0.000621371) * self.factor)
+//        let infoimEstimated = imDdistanceInMiles
+//        let infoimEstimated = imDdistanceInMiles
+//        let infoimkmEstimated = (imkmEstimated)
+
+//        print("calcEstimatedDistance \(estimatedDistance) miles: \(infoMiles)")
+        
+        // Build a phoney userInfo
+        let userInfo = [
+            "km":infoKm,
+            "miles":infoMiles,
+            "imMiles":infoIm,
+            "imKM": infoImKm,
+            "speed":Int(self.currentLocations.last!.speed * 2.23694),
+            "latitude":self.currentLocations.last!.coordinate.latitude,
+            "longitude":self.currentLocations.last!.coordinate.longitude,
+            "horizontalAccuracy":self.currentLocations.last!.horizontalAccuracy] as [String : Any]
+        //        print("makeLocationNotification \(userInfo))")
+        
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "LOCATION_AVAILABLE"), object: nil, userInfo: userInfo as [NSObject : AnyObject])
+
+
+    }
     
     //    @objc(locationManager:didUpdateLocations:)
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]){
@@ -93,6 +196,9 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
     
     func updateLocation(_ locations: [CLLocation],xgps: Bool) {
         //        return
+        timer.invalidate()
+        estimatedDistance = 0.0
+        
         var prevLocation: CLLocation
         if self.fromLocation.count == 0 {
             self.fromLocation = locations
@@ -133,6 +239,9 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 }
             }
             if addDistance == true {
+//                print("add distance \(estimatedDistance)")
+//                timer.invalidate()
+//                estimatedDistance = 0.0
                 
                 let distance = location.distance(from: prevLocation)
                 let updateChoices = (self.direction, self.selectedCounters)
@@ -167,6 +276,19 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 let imDdistanceInMiles:Float64 = ((self.imMeters * 0.000621371) * self.factor)
                 self.imMiles = imDdistanceInMiles
                 self.imKM = (imMeters/1000) * self.factor
+                
+////                print("lastKPH: \(lastKPH) \(location.speed) \(location.speed * 2.23694)")
+//                print("add distance from GPS, restart timer")
+//                timer.invalidate()
+//                estimatedDistance = 0.0
+//                // if kph > 58 kph or 36 mph
+//                if (location.speed * 3.6) > 58.0 {
+//                    let timeInterval = 60.0/(location.speed * 3.6)
+//                    print("timeInterval: \(timeInterval) for \(location.speed * 3.6)")
+//                    timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: true) {_ in
+//                        self.calcEstimatedDistance()
+//                    }
+//                }
             }
             
             let elapsedTime = Date().timeIntervalSince(self.startTime)
@@ -174,6 +296,8 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
             if averageSpeed > 100 {
                 averageSpeed = 100
             }
+            lastKPH = location.speed
+            
             let userInfo = [
                 "miles":self.miles,
                 "imMiles":self.imMiles,
@@ -187,7 +311,22 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 "et":elapsedTime] as [String : Any]
             
             NotificationCenter.default.post(name: Notification.Name(rawValue: "LOCATION_AVAILABLE"), object: nil, userInfo: userInfo as [NSObject : AnyObject])
+//            prevLocation = location
+            //                print("lastKPH: \(lastKPH) \(location.speed) \(location.speed * 2.23694)")
+//            print("add distance from GPS, restart timer \(location.distance(from: prevLocation)) \(self.miles)")
+//            timer.invalidate()
+//            estimatedDistance = 0.0
+            // if kph > 58 kph or 36 mph
+            if (location.speed * 3.6) > 1.0 {
+//                let timeInterval = 60.0/(location.speed * 3.6)
+                let timeInterval = 0.1
+//                print("timeInterval: \(timeInterval) for \(location.speed * 3.6)")
+                timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: true) {_ in
+                    self.calcEstimatedDistance()
+                }
+            }
             prevLocation = location
+
             //            }
         }
         self.currentLocations = locations

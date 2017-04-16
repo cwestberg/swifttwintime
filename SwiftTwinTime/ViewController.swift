@@ -22,6 +22,7 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
     @IBOutlet weak var factorLabel: UILabel!
     @IBOutlet weak var modeLbl: UILabel!
     @IBOutlet weak var timeAdjustLbl: UILabel!
+    @IBOutlet weak var selectedcOunters: UISegmentedControl!
     
     // Variables
     var distance = 0.0
@@ -47,6 +48,10 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         super.viewDidLoad()
         self.setupTimersForUnit()
         modeLbl.text = controlFunction
+        selectedcOunters.selectedSegmentIndex = 1
+        let userInfo = [
+            "action":"both"]
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "SelectedCountersChanged"), object: nil, userInfo: userInfo)
 
 //        // Do any additional setup after loading the view, typically from a nib.
 //       
@@ -104,13 +109,15 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
             self.tableView.reloadData()
         case "regularity":
             // Zero IM and Timer
-            items.insert("\(imLbl.text!) \(rallyTime.timerLabel)", at:0)
+//            items.insert("\(milesLbl.text!) \(imLbl.text!) \(rallyTime.timerLabel)", at:0)
+            items.insert("\(imLbl.text!) \(rallyTime.todLabel)", at:0)
             self.tableView.reloadData()
             zeroIM(sender as AnyObject)
             startTimerBtn(sender as AnyObject)
         case "jogularity":
             // Split IM & Timer
-            items.insert("\(imLbl.text!) \(rallyTime.timerLabel)", at:0)
+//            items.insert("\(milesLbl.text!) \(imLbl.text!) \(rallyTime.timerLabel)", at:0)
+            items.insert("\(milesLbl.text!) \(rallyTime.timerLabel)", at:0)
             self.tableView.reloadData()
         case "jogularityTOD":
             // Split IM & Timer
@@ -131,6 +138,7 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         default:
             break
         }
+
     }
 //    @IBAction func secondsOrCents(_ sender: UISegmentedControl) {
 //        switch sender.selectedSegmentIndex {
@@ -227,10 +235,12 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
     
     @IBAction func zeroIM(_ sender: AnyObject) {
         //print("zeroIM Btn pushed")
-        
+                self.items.insert("ZIM \(imLbl.text!) \(rallyTime.todLabel)", at:0)
+                self.tableView.reloadData()
         switch controlFunction {
         case "regularity":
             startTimerBtn(sender as AnyObject)
+//            zeroIM(sender as AnyObject)
         case "regularityN":
             rallyTime.wait()
         case "jogularityN":
@@ -259,6 +269,10 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         timerLabel.text = rallyTime.timerLabel
     }
     
+    @IBAction func clearLogBtn(_ sender: Any) {
+        self.items = []
+        self.tableView.reloadData()
+    }
     @IBAction func startTimerBtn(_ sender: Any) {
 //        timer.invalidate()
 
@@ -293,7 +307,7 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         case "miles":
             let m = userInfo!["miles"]!
             self.distance = m as! Float64
-            self.milesLbl.text = (String(format: "%06.2f", m as! Float64))
+            self.milesLbl.text = (String(format: "%06.3f", m as! Float64))
             let im = userInfo!["imMiles"]!
             self.imLbl.text = (String(format: "%06.2f", im as! Float64))
         case "km":
