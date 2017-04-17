@@ -121,7 +121,7 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
             infoIm = imDdistanceInMiles
             infoKm = kmEstimated
         case ("forward","om"):
-            kmEstimated = self.meters + estimatedDistance // Actually meters
+            kmEstimated = (self.meters * self.factor) + estimatedDistance // Actually meters
             infoMiles = (kmEstimated * 0.000621371)
         case ("forward","im"):
             imkmEstimated = self.imMeters + estimatedDistance // Actually meters
@@ -181,8 +181,6 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         //        print("makeLocationNotification \(userInfo))")
         
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LOCATION_AVAILABLE"), object: nil, userInfo: userInfo as [NSObject : AnyObject])
-
-
     }
     
     //    @objc(locationManager:didUpdateLocations:)
@@ -193,7 +191,7 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         updateLocation(locations,xgps: false)
         //        }
     }
-    
+//    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     func updateLocation(_ locations: [CLLocation],xgps: Bool) {
         //        return
         timer.invalidate()
@@ -207,7 +205,9 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         else {
             prevLocation = self.fromLocation.last!
         }
-        
+//        if locations.count > 1 {
+//            print("locations \(locations.count)")
+//        }
         for location in locations {
             //            print("location \(location)")
             
@@ -219,8 +219,10 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 
             }
             else {
-                if location.speed < 1 {
+                if location.speed < 1.0 {
                     addDistance = false
+                    timer.invalidate()
+                    estimatedDistance = 0.0
                 }
                 //print("horizontalAccuracy: \(location.horizontalAccuracy)")
                 if location.horizontalAccuracy > 40 || location.horizontalAccuracy < 0 {
@@ -240,7 +242,7 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
             }
             if addDistance == true {
 //                print("add distance \(estimatedDistance)")
-//                timer.invalidate()
+                timer.invalidate()
 //                estimatedDistance = 0.0
                 
                 let distance = location.distance(from: prevLocation)
@@ -264,6 +266,10 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 default:
                     break;
                 }
+//                print("Distance: \(distance) ED: \(estimatedDistance) \(distance > estimatedDistance) \(abs(distance - estimatedDistance))")
+
+//                timer.invalidate()
+                estimatedDistance = 0.0
                 if self.meters < 0.0 {
                     self.meters = 0.0
                 }
@@ -279,8 +285,7 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 
 ////                print("lastKPH: \(lastKPH) \(location.speed) \(location.speed * 2.23694)")
 //                print("add distance from GPS, restart timer")
-//                timer.invalidate()
-//                estimatedDistance = 0.0
+
 //                // if kph > 58 kph or 36 mph
 //                if (location.speed * 3.6) > 58.0 {
 //                    let timeInterval = 60.0/(location.speed * 3.6)
@@ -289,6 +294,9 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
 //                        self.calcEstimatedDistance()
 //                    }
 //                }
+            }
+            else {
+                return
             }
             
             let elapsedTime = Date().timeIntervalSince(self.startTime)
@@ -317,14 +325,14 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
 //            timer.invalidate()
 //            estimatedDistance = 0.0
             // if kph > 58 kph or 36 mph
-            if (location.speed * 3.6) > 1.0 {
+//            if (location.speed * 3.6) > 1.0 {
 //                let timeInterval = 60.0/(location.speed * 3.6)
                 let timeInterval = 0.1
 //                print("timeInterval: \(timeInterval) for \(location.speed * 3.6)")
                 timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: true) {_ in
                     self.calcEstimatedDistance()
                 }
-            }
+//            }
             prevLocation = location
 
             //            }
