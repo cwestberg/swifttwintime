@@ -278,20 +278,7 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         self.tableView.reloadData()
     }
     @IBAction func startTimerBtn(_ sender: Any) {
-//        timer.invalidate()
 
-        rallyTime.startTimer()
-//        timerCounter = 0
-//        timer.invalidate()
-//        timerLabel.text = "00 00"
-//        // 0.6 for cents
-//        // 1.0 for seconds
-//        var timeInterval = 0.6
-//        if timeUnit == "seconds" {
-//            timeInterval = 1.0
-//        }
-//
-//        timer = Timer.scheduledTimer(timeInterval: timeInterval, target: self, selector: #selector( updateTimerLabel), userInfo: nil, repeats: true)
        
     }
     
