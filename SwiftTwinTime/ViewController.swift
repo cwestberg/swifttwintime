@@ -86,6 +86,8 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
     @IBAction func stepperFuctionSegmentedControl(_ sender: UISegmentedControl) {
         switch stepperFunctionSegmentedControl.selectedSegmentIndex {
         case 0: // Distance
+            stepperControl.maximumValue = 1000.0
+            stepperControl.minimumValue = -1000.0
             stepperControl.stepValue = 0.01
             stepperControl.value = distance
         case 1: // factor
@@ -96,7 +98,7 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
             stepperControl.minimumValue = -5.0
             stepperControl.stepValue = 0.01
             stepperControl.value = timeAdjustStepperValue
-            print("\(stepperControl.value) \(timeAdjustStepperValue)")
+//            print("\(stepperControl.value) \(timeAdjustStepperValue)")
         default: break
         }
 
@@ -182,6 +184,9 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         case 1:
             print("direction Btn pushed reverse")
             direction = "reverse"
+        case 2:
+            print("direction Btn pushed neutral")
+            direction = "neutral"
         default:
             break;
         }
@@ -235,12 +240,11 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
     
     @IBAction func zeroIM(_ sender: AnyObject) {
         //print("zeroIM Btn pushed")
-                self.items.insert("ZIM \(imLbl.text!) \(rallyTime.todLabel)", at:0)
-                self.tableView.reloadData()
+//        self.items.insert("ZIM \(imLbl.text!) \(rallyTime.todLabel)", at:0)
+//        self.tableView.reloadData()
         switch controlFunction {
         case "regularity":
             startTimerBtn(sender as AnyObject)
-//            zeroIM(sender as AnyObject)
         case "regularityN":
             rallyTime.wait()
         case "jogularityN":
@@ -301,13 +305,13 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         //        let im = userInfo!["imMiles"]!
         //        self.splitIM = im as! Double
         //        self.imLbl.text = (String(format: "%.2f", im as! Float64))
-        
+//        print("location available \(String(describing: userInfo))")
         switch distUnit
         {
         case "miles":
             let m = userInfo!["miles"]!
-            self.distance = m as! Float64
-            self.milesLbl.text = (String(format: "%06.3f", m as! Float64))
+//            self.distance = m as! Float64
+            self.milesLbl.text = (String(format: "%06.2f", m as! Float64))
             let im = userInfo!["imMiles"]!
             self.imLbl.text = (String(format: "%06.2f", im as! Float64))
         case "km":

@@ -64,7 +64,6 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         case .notDetermined:
             print(".NotDetermined")
             self.locationManager.requestAlwaysAuthorization()
-
             break
             
         case .authorizedAlways:
@@ -85,17 +84,19 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         }
     }
     
-    
+    // +++++++++++++++++++++++++Estomate++++++++++++++++++++++++++++++++++++++++++++
     func calcEstimatedDistance() {
+        //return
         // D + S (m/s to K/h)* T
+        print("lastKPH \(lastKPH)")
+        if lastKPH < 10.0 {
+            return
+        }
+        if self.direction == "neutral" {
+            return
+        }
+        
         estimatedDistance += (lastKPH * 3.6) * 0.02778
-//        estimatedDistance += (lastKPH * 3.6) * 0.0833
-//        print("calcEstimatedDistance \(estimatedDistance)")
-
-//        print("estimatedDistance: \(estimatedDistance) \(self.meters)")
-//        print("meters + estimatedDistance: \(estimatedDistance + self.meters)")
-//        timer.invalidate()
-        // add estimated distance to current distanc
         
 //        let distance = estimatedDistance
         let updateChoices = (self.direction, self.selectedCounters)
@@ -103,30 +104,30 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
 //        var milesEstimated = 0.0
 //        var imEstimated = 0.0
 //        var imkmEstimated = 0.0
-        var imkmEstimated = estimatedDistance
-        var infoKm = (self.meters/1000) * self.factor
-        var infoImKm = (self.meters/1000) * self.factor
-        var infoMiles = (self.meters  * 0.000621371) * self.factor
-        var imDdistanceInMiles:Float64 = ((imkmEstimated * 0.000621371) * self.factor)
+        var imkmEstimated = (self.imMeters) + estimatedDistance
+        var infoKm = (self.meters/1000)
+        var infoImKm = (self.imMeters/1000)
+        var infoMiles = (self.meters + estimatedDistance) * 0.000621371
+        var imDistanceInMiles:Float64 = (imkmEstimated * 0.000621371)
         var infoIm = self.imMiles
-        
+//        print("meters \(meters)")
         switch updateChoices
         {
         case ("forward","both"):
             kmEstimated = self.meters + estimatedDistance // Actually meters
             imkmEstimated = self.imMeters + estimatedDistance // Actually meters
-            infoImKm = imkmEstimated
-            infoMiles = (kmEstimated * 0.000621371)
-            imDdistanceInMiles = (((imkmEstimated + (self.imMiles * self.factor)) * 0.000621371) )
-            infoIm = imDdistanceInMiles
-            infoKm = kmEstimated
+//            infoImKm = imkmEstimated
+//            infoMiles = (self.meters + kmEstimated) * 0.000621371
+//            imDdistanceInMiles = (((imkmEstimated + (self.imMiles * self.factor)) * 0.000621371) )
+            infoIm = imDistanceInMiles
+//            infoKm = kmEstimated
         case ("forward","om"):
-            kmEstimated = (self.meters * self.factor) + estimatedDistance // Actually meters
-            infoMiles = (kmEstimated * 0.000621371)
+            kmEstimated = (self.meters) + estimatedDistance // Actually meters
+//            infoMiles = (kmEstimated * 0.000621371)
         case ("forward","im"):
             imkmEstimated = self.imMeters + estimatedDistance // Actually meters
-            imDdistanceInMiles = (((imkmEstimated + (self.imMiles * self.factor)) * 0.000621371) )
-            infoIm = imDdistanceInMiles
+            imDistanceInMiles = (((imkmEstimated + (self.imMiles)) * 0.000621371) )
+            infoIm = imDistanceInMiles
         case ("reverse","both"):
 //            kmEstimated = self.meters - estimatedDistance // Actually meters
 //            imkmEstimated = self.imMeters - estimatedDistance // Actually meters
@@ -134,8 +135,8 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
             imkmEstimated = self.imMeters - estimatedDistance // Actually meters
             infoImKm = imkmEstimated
             infoMiles = (kmEstimated * 0.000621371)
-            imDdistanceInMiles = (((imkmEstimated + (self.imMiles * self.factor)) * 0.000621371))
-            infoIm = imDdistanceInMiles
+            imDistanceInMiles = (((imkmEstimated + (self.imMiles)) * 0.000621371))
+            infoIm = imDistanceInMiles
             infoKm = kmEstimated
 
         case ("reverse","om"):
@@ -145,8 +146,8 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         case ("reverse","im"):
 //            imkmEstimated = self.imMeters - estimatedDistance // Actually meters
             imkmEstimated = self.imMeters + estimatedDistance // Actually meters
-            imDdistanceInMiles = (((imkmEstimated - self.imMiles) * 0.000621371) * self.factor)
-            infoIm = imDdistanceInMiles
+            imDistanceInMiles = (((imkmEstimated - self.imMiles) * 0.000621371))
+            infoIm = imDistanceInMiles
         default:
             break;
         }
@@ -175,9 +176,9 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
             "imMiles":infoIm,
             "imKM": infoImKm,
             "speed":Int(self.currentLocations.last!.speed * 2.23694),
-            "latitude":self.currentLocations.last!.coordinate.latitude,
-            "longitude":self.currentLocations.last!.coordinate.longitude,
-            "horizontalAccuracy":self.currentLocations.last!.horizontalAccuracy] as [String : Any]
+            "latitude":44.875328,
+            "longitude": -91.939003,
+            "horizontalAccuracy":5] as [String : Any]
         //        print("makeLocationNotification \(userInfo))")
         
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LOCATION_AVAILABLE"), object: nil, userInfo: userInfo as [NSObject : AnyObject])
@@ -194,9 +195,9 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
 //    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     func updateLocation(_ locations: [CLLocation],xgps: Bool) {
         //        return
-        timer.invalidate()
-        estimatedDistance = 0.0
-        
+//        timer.invalidate()
+//        estimatedDistance = 0.0
+        print("updateLocation \(locations)")
         var prevLocation: CLLocation
         if self.fromLocation.count == 0 {
             self.fromLocation = locations
@@ -219,12 +220,13 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 
             }
             else {
-                if location.speed < 1.0 {
+                print("prevLocation \(prevLocation)")
+                if location.speed == 0.00  {
+                    print("speed 0: \(location.speed)")
                     addDistance = false
-                    timer.invalidate()
-                    estimatedDistance = 0.0
                 }
-                //print("horizontalAccuracy: \(location.horizontalAccuracy)")
+
+                  //print("horizontalAccuracy: \(location.horizontalAccuracy)")
                 if location.horizontalAccuracy > 40 || location.horizontalAccuracy < 0 {
                     //print("return: \(location.horizontalAccuracy), \(location.speed)")
                     addDistance = false
@@ -234,18 +236,24 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                     addDistance = false
                 }
                 if prevLocation.speed < 0 {
-                    addDistance = false
+//                    addDistance = false
+                    print("speed \(prevLocation.speed)")
+
                 }
                 if location.timestamp.timeIntervalSinceReferenceDate < prevLocation.timestamp.timeIntervalSinceReferenceDate {
+                    print("timestamp \(prevLocation.timestamp)")
                     addDistance = false
                 }
             }
+            print("updateLocation \(addDistance)")
+
             if addDistance == true {
 //                print("add distance \(estimatedDistance)")
                 timer.invalidate()
 //                estimatedDistance = 0.0
                 
-                let distance = location.distance(from: prevLocation)
+                let distance = location.distance(from: prevLocation) * self.factor
+//                let distance = location.distance(from: prevLocation)
                 let updateChoices = (self.direction, self.selectedCounters)
                 switch updateChoices
                 {
@@ -266,7 +274,7 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 default:
                     break;
                 }
-//                print("Distance: \(distance) ED: \(estimatedDistance) \(distance > estimatedDistance) \(abs(distance - estimatedDistance))")
+//print("Distance: \(distance) ED: \(estimatedDistance) \(distance > estimatedDistance) \(abs(distance - estimatedDistance))")
 
 //                timer.invalidate()
                 estimatedDistance = 0.0
@@ -276,12 +284,14 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 if self.imMeters < 0.0 {
                     self.imMeters = 0.0
                 }
-                self.km = (self.meters/1000) * self.factor
-                let distanceInMiles:Float64 = ((self.meters * 0.000621371) * self.factor)
+                self.km = (self.meters/1000)
+//                let distanceInMiles:Float64 = ((self.meters * 0.000621371) * self.factor)
+                let distanceInMiles:Float64 = ((self.meters * 0.000621371))
                 self.miles = distanceInMiles
-                let imDdistanceInMiles:Float64 = ((self.imMeters * 0.000621371) * self.factor)
+//                let imDdistanceInMiles:Float64 = ((self.imMeters * 0.000621371) * self.factor)
+                let imDdistanceInMiles:Float64 = ((self.imMeters * 0.000621371))
                 self.imMiles = imDdistanceInMiles
-                self.imKM = (imMeters/1000) * self.factor
+                self.imKM = (imMeters/1000)
                 
 ////                print("lastKPH: \(lastKPH) \(location.speed) \(location.speed * 2.23694)")
 //                print("add distance from GPS, restart timer")
@@ -296,6 +306,10 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
 //                }
             }
             else {
+                self.currentLocations = locations
+                self.fromLocation = locations
+                prevLocation = location
+                lastKPH = location.speed
                 return
             }
             
@@ -391,14 +405,45 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         self.meters = 0.00
         self.km = 0.00
         self.miles = 0.000
-        dummyLocationNotification()
+        estimatedDistance = 0.0
+        lastKPH = 0.0
+//        print("resrt \(miles) \(meters)")
+//        dummyLocationNotification()
+        
+        let userInfo = [
+            "timestamp":Date(),
+            "course":0.0,
+            "miles":0.0,
+            "imMiles":imMiles,
+            "km":0.0,
+            "imKM": imKM,
+            "speed":0,
+            "latitude":44.875328,
+            "longitude": -91.939003,
+            "horizontalAccuracy":5] as [String : Any]
+//        print("resetIM dummy \(userInfo)")
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "LOCATION_AVAILABLE"), object: nil, userInfo: userInfo as [NSObject : AnyObject])
     }
     
     func resetIM(_ notification:Notification) -> Void {
         self.imMeters = 0.00
         self.imMiles = 0.000
         self.imKM = 0.0
-        dummyLocationNotification()
+//        dummyLocationNotification()
+
+        let userInfo = [
+            "timestamp":Date(),
+            "course":0.0,
+            "miles":self.miles,
+            "imMiles":0.0,
+            "km":self.km,
+            "imKM": 0.0,
+            "speed":0,
+            "latitude":44.875328,
+            "longitude": -91.939003,
+            "horizontalAccuracy":5] as [String : Any]
+//        print("resetIM dummy \(userInfo)")
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "LOCATION_AVAILABLE"), object: nil, userInfo: userInfo as [NSObject : AnyObject])
         
     }
     
@@ -409,6 +454,7 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         self.imMiles = 0.000
         self.imKM = 0.0
         self.km = 0.0
+        estimatedDistance = 0.0
         dummyLocationNotification()
         
     }
@@ -419,19 +465,18 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         let newFactor = userInfo!["factor"]!
         //        print("ChangeFactor Notification: \(newFactor) \(self.meters)")
         self.factor = newFactor as! Float64
-        let distanceInMiles:Float64 = ((self.meters * 0.000621371) * self.factor)
-        self.miles = distanceInMiles
-        let distanceInMeters:Float64 = ((self.imMeters * 0.000621371))
-        self.imMiles = distanceInMeters
-        self.km = (self.meters/1000) * self.factor
-        self.makeLocationNotification()
+//        let distanceInMiles:Float64 = ((self.meters * 0.000621371) * self.factor)
+//        self.miles = distanceInMiles
+//        let distanceInMeters:Float64 = ((self.imMeters * 0.000621371))
+//        self.imMiles = distanceInMeters
+//        self.km = (self.meters/1000) * self.factor
+//        self.makeLocationNotification()
     }
     
     func dummyLocationNotification() {
-        print("dummy")
-        
+//        print("meters \(meters) km \(km)")
         let distanceInMiles:Float64 = ((self.meters * 0.000621371))
-        self.miles = distanceInMiles * self.factor
+        self.miles = distanceInMiles
         let distanceInMeters:Float64 = ((self.imMeters * 0.000621371))
         self.imMiles = distanceInMeters
         self.km = (self.meters/1000)
@@ -448,6 +493,8 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
             "latitude":44.875328,
             "longitude": -91.939003,
             "horizontalAccuracy":5] as [String : Any]
+//        print("dummy \(userInfo)")
+
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LOCATION_AVAILABLE"), object: nil, userInfo: userInfo as [NSObject : AnyObject])
     }
     
@@ -494,6 +541,7 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
             "latitude":self.fromLocation.last!.coordinate.latitude,
             "longitude":self.fromLocation.last!.coordinate.longitude,
             "horizontalAccuracy":self.fromLocation.last!.horizontalAccuracy] as [String : Any]
+        //print("userinfo \(userInfo)")
         NotificationCenter.default.post(name: Notification.Name(rawValue: "LOCATION_AVAILABLE"), object: nil, userInfo: userInfo as [NSObject : AnyObject])
     }
     
