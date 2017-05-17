@@ -277,9 +277,9 @@ class ViewController: UIViewController,UITableViewDelegate, UITableViewDataSourc
         self.items = []
         self.tableView.reloadData()
     }
+    
     @IBAction func startTimerBtn(_ sender: Any) {
-
-       
+        rallyTime.startTimer()
     }
     
     func locationAvailable(_ notification:Notification) -> Void {

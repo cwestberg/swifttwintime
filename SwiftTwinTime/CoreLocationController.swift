@@ -88,7 +88,7 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
     func calcEstimatedDistance() {
         //return
         // D + S (m/s to K/h)* T
-        print("lastKPH \(lastKPH)")
+//        print("lastKPH \(lastKPH)")
         if lastKPH < 10.0 {
             return
         }
@@ -197,7 +197,7 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
         //        return
 //        timer.invalidate()
 //        estimatedDistance = 0.0
-        print("updateLocation \(locations)")
+//        print("updateLocation \(locations)")
         var prevLocation: CLLocation
         if self.fromLocation.count == 0 {
             self.fromLocation = locations
@@ -220,9 +220,9 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 
             }
             else {
-                print("prevLocation \(prevLocation)")
+//                print("prevLocation \(prevLocation)")
                 if location.speed == 0.00  {
-                    print("speed 0: \(location.speed)")
+//                    print("speed 0: \(location.speed)")
                     addDistance = false
                 }
 
@@ -237,15 +237,15 @@ class CoreLocationController: NSObject, CLLocationManagerDelegate{
                 }
                 if prevLocation.speed < 0 {
 //                    addDistance = false
-                    print("speed \(prevLocation.speed)")
+//                    print("speed \(prevLocation.speed)")
 
                 }
                 if location.timestamp.timeIntervalSinceReferenceDate < prevLocation.timestamp.timeIntervalSinceReferenceDate {
-                    print("timestamp \(prevLocation.timestamp)")
+//                    print("timestamp \(prevLocation.timestamp)")
                     addDistance = false
                 }
             }
-            print("updateLocation \(addDistance)")
+//            print("updateLocation \(addDistance)")
 
             if addDistance == true {
 //                print("add distance \(estimatedDistance)")
